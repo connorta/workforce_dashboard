@@ -200,3 +200,18 @@ ax.set_title('Supply and Demand of Skills')
 st.pyplot(fig)
 
 # GPT Agent for Q&A
+st.sidebar.header("Ask the GPT Agent")
+user_question = st.sidebar.text_area("Ask a question about the analysis:")
+
+if user_question:
+    openai.api_key = st.secrets["openai_api_key"]
+    response = openai.ChatCompletion.create(
+        model="gpt-3.5-turbo",
+        messages=[
+            {"role": "system", "content": "You are an expert data analyst."},
+            {"role": "user", "content": user_question}
+        ],
+        max_tokens=150
+    )
+    st.sidebar.write("GPT Agent Response:")
+    st.sidebar.write(response['choices'][0]['message']['content'].strip())
