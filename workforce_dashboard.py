@@ -121,6 +121,7 @@ class EmployeeAgent(Agent):
 
 class WorkforceModel(Model):
     def __init__(self, num_employees):
+        super().__init__()  # Explicitly call the Model initializer
         self.num_employees = num_employees
         self.schedule = RandomActivation(self)
 
@@ -199,15 +200,3 @@ ax.set_title('Supply and Demand of Skills')
 st.pyplot(fig)
 
 # GPT Agent for Q&A
-st.sidebar.header("Ask the GPT Agent")
-user_question = st.sidebar.text_area("Ask a question about the analysis:")
-
-if user_question:
-    openai.api_key = st.secrets["openai_api_key"]
-    response = openai.Completion.create(
-        engine="text-davinci-003",
-        prompt=f"You are an expert data analyst. Answer the following question based on the workforce data analysis provided: {user_question}",
-        max_tokens=150
-    )
-    st.sidebar.write("GPT Agent Response:")
-    st.sidebar.write(response.choices[0].text.strip())
