@@ -12,7 +12,7 @@ import itertools
 st.title('AI-Powered Workforce Skills Optimization Dashboard')
 st.markdown("""
 This dashboard helps you understand which skills within your workforce can be automated or augmented by AI, aligns human talent with project requirements, predicts changes in workforce, and creates actionable insights for effective workforce management.
-Use the controls below to input skills data, evaluate where AI can take over tasks, and optimize the allocation of your human resources.
+Use the controls below to input project descriptions, evaluate where AI can take over tasks, and optimize the allocation of your human resources.
 """)
 
 # Sidebar options for user input
@@ -116,7 +116,20 @@ project_data = []
 for i in range(num_projects):
     st.sidebar.subheader(f"Project {i + 1}")
     project_name = st.sidebar.text_input(f"Project {i + 1} Name", value=f"Project {i + 1}")
-    required_skills = st.sidebar.multiselect(f"Skills Needed for {project_name}", ['Python', 'Data Analysis', 'Project Management', 'Leadership', 'Cloud Computing', 'Routine Admin'])
+    project_description = st.sidebar.text_area(f"Project {i + 1} Description", value=f"Describe the objectives and needs of {project_name}")
+
+    # Use GPT to identify required skills from the project description
+    openai.api_key = st.secrets["openai_api_key"]
+    response = openai.ChatCompletion.create(
+        model="gpt-3.5-turbo",
+        messages=[
+            {"role": "system", "content": "You are an expert project manager."},
+            {"role": "user", "content": f"Based on the following project description, identify the skills required: {project_description}"}
+        ],
+        max_tokens=150
+    )
+    required_skills = response['choices'][0]['message']['content'].strip().split(', ')
+
     skill_capacities = st.sidebar.slider(f"Capacity Needed for {project_name} (Number of Employees)", min_value=1, max_value=50, value=5)
     project_data.append({'Project_Name': project_name, 'Skills_Needed': required_skills, 'Capacity_Needed': skill_capacities})
 
