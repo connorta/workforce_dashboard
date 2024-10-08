@@ -173,7 +173,3 @@ if user_question:
     )
     st.sidebar.write("GPT Agent Response:")
     st.sidebar.write(response['choices'][0]['message']['content'].strip())
-        max_tokens=150
-    )
-    st.sidebar.write("GPT Agent Response:")
-    st.sidebar.write(response['choices'][0]['message']['content'].strip())
