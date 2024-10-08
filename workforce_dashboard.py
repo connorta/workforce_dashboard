@@ -119,7 +119,7 @@ for i in range(num_projects):
     project_description = st.sidebar.text_area(f"Project {i + 1} Description", value=f"Describe the objectives and needs of {project_name}")
 
     # Use GPT to identify required skills from the project description
-    openai.api_key = st.secrets["openai_api_key"]
+    openai.api_key = st.secrets["OPENAI_API_KEY"]
     response = openai.ChatCompletion.create(
         model="gpt-3.5-turbo",
         messages=[
@@ -162,13 +162,17 @@ st.sidebar.header("Ask the GPT Agent")
 user_question = st.sidebar.text_area("Ask a question about the analysis:")
 
 if user_question:
-    openai.api_key = st.secrets["openai_api_key"]
+    openai.api_key = st.secrets["OPENAI_API_KEY"]
     response = openai.ChatCompletion.create(
         model="gpt-3.5-turbo",
         messages=[
             {"role": "system", "content": "You are an expert data analyst."},
             {"role": "user", "content": user_question}
         ],
+        max_tokens=150
+    )
+    st.sidebar.write("GPT Agent Response:")
+    st.sidebar.write(response['choices'][0]['message']['content'].strip())
         max_tokens=150
     )
     st.sidebar.write("GPT Agent Response:")
