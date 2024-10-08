@@ -181,19 +181,17 @@ if uploaded_file is not None:
 st.subheader("Supply and Demand of Skills")
 # Simulate skill demand based on external factors
 demand = {'Basic': np.random.randint(30, 80), 'Intermediate': np.random.randint(100, 200), 'Advanced': np.random.randint(50, 100)}
-skill_supply = data['Skill_Level'].value_counts().to_dict()
+skill_supply = data['Skill_Level'].value_counts().reindex(['Basic', 'Intermediate', 'Advanced'], fill_value=0).to_dict()
 
 # Create DataFrame for supply and demand comparison
-supply_demand_df = pd.DataFrame.from_dict([skill_supply, demand], orient='index')
-supply_demand_df.index = ['Supply', 'Demand']
-supply_demand_df = supply_demand_df.fillna(0)
+supply_demand_df = pd.DataFrame({'Supply': skill_supply, 'Demand': demand})
 
 st.write("Skill Supply vs Demand")
 st.write(supply_demand_df)
 
 # Plot supply vs demand
 fig, ax = plt.subplots()
-supply_demand_df.T.plot(kind='bar', ax=ax)
+supply_demand_df.plot(kind='bar', ax=ax)
 ax.set_xlabel('Skill Level')
 ax.set_ylabel('Count')
 ax.set_title('Supply and Demand of Skills')
