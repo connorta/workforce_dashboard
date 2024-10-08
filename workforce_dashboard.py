@@ -9,40 +9,10 @@ import openai
 import itertools
 
 # Title of the dashboard
-st.title('Workforce Skills Inventory and Project Alignment Dashboard')
+st.title('AI-Powered Workforce Skills Optimization Dashboard')
 st.markdown("""
-This dashboard helps you understand the skills across your organization, aligns talent with project requirements, predicts changes in workforce, and creates actionable insights for effective workforce management.
-Use the controls below to input skills data and upcoming projects, then optimize the allocation of resources.
-
-### Requirements to Run This Project:
-1. **Python 3**: Make sure Python 3 is installed.
-2. **Install Dependencies**:
-   - Create a virtual environment:
-     ```sh
-     python3 -m venv venv
-     source venv/bin/activate
-     ```
-   - Install required packages using `pip`:
-     ```sh
-     pip install streamlit pandas scikit-learn matplotlib openai
-     ```
-3. **OpenAI API Key**:
-   - Create a `.streamlit` folder in your project directory:
-     ```sh
-     mkdir .streamlit
-     ```
-   - Create a `secrets.toml` file in `.streamlit` folder and add your OpenAI API key:
-     ```toml
-     [general]
-     openai_api_key = "YOUR_OPENAI_API_KEY"
-     ```
-4. **Run the App**:
-   - Use the command:
-     ```sh
-     streamlit run skills_workforce_dashboard.py
-     ```
-5. **Access the App**:
-   - Open your browser and navigate to `http://localhost:8501`.
+This dashboard helps you understand which skills within your workforce can be automated or augmented by AI, aligns human talent with project requirements, predicts changes in workforce, and creates actionable insights for effective workforce management.
+Use the controls below to input skills data, evaluate where AI can take over tasks, and optimize the allocation of your human resources.
 """)
 
 # Sidebar options for user input
@@ -60,10 +30,11 @@ np.random.seed(42)
 ages = np.random.normal(loc=(age_min + age_max) / 2, scale=5, size=num_employees).astype(int)
 ages = np.clip(ages, age_min, age_max)
 experience = np.clip(ages - np.random.randint(22, 32, size=num_employees), 0, None)
-skills = np.random.choice(['Python', 'Data Analysis', 'Project Management', 'Leadership', 'Cloud Computing'], size=num_employees, p=[0.25, 0.25, 0.2, 0.15, 0.15])
+skills = np.random.choice(['Python', 'Data Analysis', 'Project Management', 'Leadership', 'Cloud Computing', 'Routine Admin'], size=num_employees, p=[0.2, 0.2, 0.15, 0.1, 0.15, 0.2])
 proficiency = np.random.choice(['Beginner', 'Intermediate', 'Advanced'], size=num_employees, p=[0.3, 0.5, 0.2])
 
-# Create DataFrame
+# AI Skill Identification
+ai_automatable_skills = ['Data Analysis', 'Routine Admin']
 data = pd.DataFrame({
     'Employee_ID': range(1, num_employees + 1),
     'Age': ages,
@@ -71,6 +42,7 @@ data = pd.DataFrame({
     'Skill': skills,
     'Proficiency_Level': proficiency
 })
+data['AI_Automatable'] = data['Skill'].apply(lambda x: 'Yes' if x in ai_automatable_skills else 'No')
 
 # File Upload for Real Data
 st.sidebar.subheader("Upload Your Workforce Data")
@@ -144,7 +116,7 @@ project_data = []
 for i in range(num_projects):
     st.sidebar.subheader(f"Project {i + 1}")
     project_name = st.sidebar.text_input(f"Project {i + 1} Name", value=f"Project {i + 1}")
-    required_skills = st.sidebar.multiselect(f"Skills Needed for {project_name}", ['Python', 'Data Analysis', 'Project Management', 'Leadership', 'Cloud Computing'])
+    required_skills = st.sidebar.multiselect(f"Skills Needed for {project_name}", ['Python', 'Data Analysis', 'Project Management', 'Leadership', 'Cloud Computing', 'Routine Admin'])
     skill_capacities = st.sidebar.slider(f"Capacity Needed for {project_name} (Number of Employees)", min_value=1, max_value=50, value=5)
     project_data.append({'Project_Name': project_name, 'Skills_Needed': required_skills, 'Capacity_Needed': skill_capacities})
 
@@ -160,7 +132,7 @@ for project in project_data:
     matched_projects.append({'Project': project['Project_Name'], 'Assigned_Employees': selected_employees})
 
     st.write(f"**{project['Project_Name']}**")
-    st.write(selected_employees[['Employee_ID', 'Skill', 'Proficiency_Level', 'Years_of_Experience']])
+    st.write(selected_employees[['Employee_ID', 'Skill', 'Proficiency_Level', 'Years_of_Experience', 'AI_Automatable']])
 
 # Skill Gap Analysis
 st.subheader("Skill Gap Analysis")
