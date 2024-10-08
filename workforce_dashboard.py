@@ -5,15 +5,14 @@ import matplotlib.pyplot as plt
 from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
-from mesa import Agent, Model
-from mesa.time import RandomActivation
 import openai
+import itertools
 
 # Title of the dashboard
-st.title('Advanced Workforce Modeling Dashboard with Machine Learning')
+st.title('Workforce Skills Inventory and Project Alignment Dashboard')
 st.markdown("""
-This dashboard simulates workforce demographics, models retirement and attrition risks, provides predictive insights for workforce planning, and analyzes the skills matrix to enable better talent alignment across projects.
-Use the controls below to generate and analyze synthetic workforce data or upload your own.
+This dashboard helps you understand the skills across your organization, aligns talent with project requirements, predicts changes in workforce, and creates actionable insights for effective workforce management.
+Use the controls below to input skills data and upcoming projects, then optimize the allocation of resources.
 """)
 
 # Sidebar options for user input
@@ -31,19 +30,16 @@ np.random.seed(42)
 ages = np.random.normal(loc=(age_min + age_max) / 2, scale=5, size=num_employees).astype(int)
 ages = np.clip(ages, age_min, age_max)
 experience = np.clip(ages - np.random.randint(22, 32, size=num_employees), 0, None)
-retirement_age = 60
-retirement_prob = np.where(ages >= retirement_age, 0.8, 0.1)
-skills = np.random.choice(['Basic', 'Intermediate', 'Advanced'], size=num_employees, p=[0.2, 0.5, 0.3])
-project_needs = np.random.choice(['Data Analysis', 'Project Management', 'Python Programming', 'Leadership'], size=num_employees, p=[0.25, 0.25, 0.25, 0.25])
+skills = np.random.choice(['Python', 'Data Analysis', 'Project Management', 'Leadership', 'Cloud Computing'], size=num_employees, p=[0.25, 0.25, 0.2, 0.15, 0.15])
+proficiency = np.random.choice(['Beginner', 'Intermediate', 'Advanced'], size=num_employees, p=[0.3, 0.5, 0.2])
 
 # Create DataFrame
 data = pd.DataFrame({
     'Employee_ID': range(1, num_employees + 1),
     'Age': ages,
     'Years_of_Experience': experience,
-    'Retirement_Probability': retirement_prob,
-    'Skill_Level': skills,
-    'Project_Assignment_Need': project_needs
+    'Skill': skills,
+    'Proficiency_Level': proficiency
 })
 
 # File Upload for Real Data
@@ -63,8 +59,8 @@ st.subheader("Generated or Uploaded Workforce Data")
 st.write(data)
 
 # Feature Engineering
-skill_mapping = {'Basic': 0, 'Intermediate': 1, 'Advanced': 2}
-data['Skill_Level_Code'] = data['Skill_Level'].map(skill_mapping)
+proficiency_mapping = {'Beginner': 0, 'Intermediate': 1, 'Advanced': 2}
+data['Proficiency_Code'] = data['Proficiency_Level'].map(proficiency_mapping)
 data['Engagement_Score'] = np.random.randint(1, 11, size=num_employees)
 data['Performance_Rating'] = np.random.randint(1, 6, size=num_employees)
 data['Attrition'] = np.random.choice([0, 1], size=num_employees, p=[0.8, 0.2])
@@ -72,7 +68,7 @@ data['Attrition'] = np.random.choice([0, 1], size=num_employees, p=[0.8, 0.2])
 # Predictive Attrition Modeling
 def build_attrition_model(data):
     # Prepare data for ML
-    X = data[['Age', 'Years_of_Experience', 'Skill_Level_Code', 'Engagement_Score', 'Performance_Rating']]
+    X = data[['Age', 'Years_of_Experience', 'Proficiency_Code', 'Engagement_Score', 'Performance_Rating']]
     y = data['Attrition']
 
     # Train-test split
@@ -110,102 +106,41 @@ ax.set_ylabel('Number of Employees')
 ax.set_title('Distribution of Attrition Probability')
 st.pyplot(fig)
 
-# Agent-Based Modeling for Retirement Simulation
-class EmployeeAgent(Agent):
-    def __init__(self, unique_id, model, age, experience):
-        super().__init__(unique_id, model)
-        self.age = age
-        self.experience = experience
+# Input Upcoming Project Requirements
+st.sidebar.header("Project Requirements")
+num_projects = st.sidebar.number_input("Number of Projects", min_value=1, max_value=20, value=3)
+project_data = []
 
-    def step(self):
-        if self.age >= 60:
-            self.model.retirement_count += 1
+for i in range(num_projects):
+    st.sidebar.subheader(f"Project {i + 1}")
+    project_name = st.sidebar.text_input(f"Project {i + 1} Name", value=f"Project {i + 1}")
+    required_skills = st.sidebar.multiselect(f"Skills Needed for {project_name}", ['Python', 'Data Analysis', 'Project Management', 'Leadership', 'Cloud Computing'])
+    skill_capacities = st.sidebar.slider(f"Capacity Needed for {project_name} (Number of Employees)", min_value=1, max_value=50, value=5)
+    project_data.append({'Project_Name': project_name, 'Skills_Needed': required_skills, 'Capacity_Needed': skill_capacities})
 
-class WorkforceModel(Model):
-    def __init__(self, num_employees):
-        super().__init__()  # Explicitly call the Model initializer
-        self.num_employees = num_employees
-        self.schedule = RandomActivation(self)
+# Matching Employees to Projects
+st.subheader("Project Allocation and Skill Matching")
+matched_projects = []
 
-        # Add agents to the model
-        for i in range(self.num_employees):
-            age = np.random.randint(45, 65)
-            experience = np.random.randint(10, 40)
-            agent = EmployeeAgent(i, self, age, experience)
-            self.schedule.add(agent)
+for project in project_data:
+    required_skills = project['Skills_Needed']
+    capacity_needed = project['Capacity_Needed']
+    available_employees = data[data['Skill'].isin(required_skills)]
+    selected_employees = available_employees.head(capacity_needed)
+    matched_projects.append({'Project': project['Project_Name'], 'Assigned_Employees': selected_employees})
 
-    def step(self):
-        self.retirement_count = 0
-        self.schedule.step()
+    st.write(f"**{project['Project_Name']}**")
+    st.write(selected_employees[['Employee_ID', 'Skill', 'Proficiency_Level', 'Years_of_Experience']])
 
-st.subheader("Agent-Based Retirement Simulation")
-model = WorkforceModel(num_employees)
-for i in range(5):  # Run the model for 5 steps (years)
-    model.step()
-st.write(f"Total retirements after 5 years: {model.retirement_count}")
+# Skill Gap Analysis
+st.subheader("Skill Gap Analysis")
+all_required_skills = list(itertools.chain.from_iterable([project['Skills_Needed'] for project in project_data]))
+required_skill_counts = pd.Series(all_required_skills).value_counts()
+available_skill_counts = data['Skill'].value_counts()
+skill_gap = required_skill_counts.subtract(available_skill_counts, fill_value=0)
 
-# Skill Gap Analysis and Training Recommendations
-training_courses = {
-    'Data Analysis': 'Coursera: Data Analysis for Business',
-    'Python Programming': 'Udemy: Python for Beginners',
-    'Leadership': 'LinkedIn Learning: Leadership Foundations',
-    'Project Management': 'edX: Introduction to Project Management'
-}
-
-st.sidebar.subheader("Employee Skill Gap Analysis")
-skill_to_learn = st.sidebar.selectbox("Select a skill to analyze", list(training_courses.keys()))
-st.sidebar.write(f"Suggested Training: {training_courses[skill_to_learn]}")
-
-# Career Path Visualization
-st.subheader("Career Path Simulation")
-career_paths = {
-    'Entry Level': ['Junior Analyst', 'Data Analyst', 'Senior Analyst'],
-    'Technical Role': ['Junior Developer', 'Software Engineer', 'Lead Engineer'],
-    'Management': ['Team Lead', 'Project Manager', 'Director']
-}
-
-selected_path = st.selectbox("Select a Career Path", list(career_paths.keys()))
-st.write(" -> ".join(career_paths[selected_path]))
-
-# Industry Benchmarking Report
-st.subheader("Industry Benchmarking")
-if uploaded_file is not None:
-    insights = data.groupby('Skill_Level').agg({'Age': 'mean', 'Years_of_Experience': 'mean', 'Engagement_Score': 'mean'})
-    st.write("Average Age, Experience, and Engagement Score by Skill Level")
-    st.write(insights)
-
-    # Download button for benchmark report
-    st.download_button(
-        label="Download Benchmark Report",
-        data=insights.to_csv(),
-        file_name='benchmark_report.csv'
-    )
-
-# Supply and Demand Analysis of Skills
-st.subheader("Supply and Demand of Skills")
-# Simulate skill demand based on external factors
-demand = {'Basic': np.random.randint(30, 80), 'Intermediate': np.random.randint(100, 200), 'Advanced': np.random.randint(50, 100)}
-skill_supply = data['Skill_Level'].value_counts().reindex(['Basic', 'Intermediate', 'Advanced'], fill_value=0).to_dict()
-
-# Create DataFrame for supply and demand comparison
-supply_demand_df = pd.DataFrame({'Supply': skill_supply, 'Demand': demand})
-
-st.write("Skill Supply vs Demand")
-st.write(supply_demand_df)
-
-# Plot supply vs demand
-fig, ax = plt.subplots()
-supply_demand_df.plot(kind='bar', ax=ax)
-ax.set_xlabel('Skill Level')
-ax.set_ylabel('Count')
-ax.set_title('Supply and Demand of Skills')
-st.pyplot(fig)
-
-# Skills Matrix for Project Alignment
-st.subheader("Skills Matrix for Project Alignment")
-skills_matrix = pd.crosstab(data['Skill_Level'], data['Project_Assignment_Need'], rownames=['Skill Level'], colnames=['Project Need'])
-st.write("Skills Matrix showing alignment between current skills and project needs")
-st.write(skills_matrix)
+st.write("Required vs Available Skills")
+st.write(pd.DataFrame({'Required': required_skill_counts, 'Available': available_skill_counts, 'Gap': skill_gap}))
 
 # GPT Agent for Q&A
 st.sidebar.header("Ask the GPT Agent")
