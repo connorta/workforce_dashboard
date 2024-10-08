@@ -12,7 +12,7 @@ import openai
 # Title of the dashboard
 st.title('Advanced Workforce Modeling Dashboard with Machine Learning')
 st.markdown("""
-This dashboard simulates workforce demographics, models retirement and attrition risks, and provides predictive insights for workforce planning in the energy sector.
+This dashboard simulates workforce demographics, models retirement and attrition risks, provides predictive insights for workforce planning, and analyzes the skills matrix to enable better talent alignment across projects.
 Use the controls below to generate and analyze synthetic workforce data or upload your own.
 """)
 
@@ -34,6 +34,7 @@ experience = np.clip(ages - np.random.randint(22, 32, size=num_employees), 0, No
 retirement_age = 60
 retirement_prob = np.where(ages >= retirement_age, 0.8, 0.1)
 skills = np.random.choice(['Basic', 'Intermediate', 'Advanced'], size=num_employees, p=[0.2, 0.5, 0.3])
+project_needs = np.random.choice(['Data Analysis', 'Project Management', 'Python Programming', 'Leadership'], size=num_employees, p=[0.25, 0.25, 0.25, 0.25])
 
 # Create DataFrame
 data = pd.DataFrame({
@@ -41,7 +42,8 @@ data = pd.DataFrame({
     'Age': ages,
     'Years_of_Experience': experience,
     'Retirement_Probability': retirement_prob,
-    'Skill_Level': skills
+    'Skill_Level': skills,
+    'Project_Assignment_Need': project_needs
 })
 
 # File Upload for Real Data
@@ -199,16 +201,25 @@ ax.set_ylabel('Count')
 ax.set_title('Supply and Demand of Skills')
 st.pyplot(fig)
 
+# Skills Matrix for Project Alignment
+st.subheader("Skills Matrix for Project Alignment")
+skills_matrix = pd.crosstab(data['Skill_Level'], data['Project_Assignment_Need'], rownames=['Skill Level'], colnames=['Project Need'])
+st.write("Skills Matrix showing alignment between current skills and project needs")
+st.write(skills_matrix)
+
 # GPT Agent for Q&A
 st.sidebar.header("Ask the GPT Agent")
 user_question = st.sidebar.text_area("Ask a question about the analysis:")
 
 if user_question:
     openai.api_key = st.secrets["openai_api_key"]
-    response = openai.Completion.create(
-        engine="text-davinci-003",
-        prompt=f"You are an expert data analyst. Answer the following question based on the workforce data analysis provided: {user_question}",
+    response = openai.ChatCompletion.create(
+        model="gpt-3.5-turbo",
+        messages=[
+            {"role": "system", "content": "You are an expert data analyst."},
+            {"role": "user", "content": user_question}
+        ],
         max_tokens=150
     )
     st.sidebar.write("GPT Agent Response:")
-    st.sidebar.write(response.choices[0].text.strip())
+    st.sidebar.write(response['choices'][0]['message']['content'].strip())
