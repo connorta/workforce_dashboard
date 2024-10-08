@@ -13,6 +13,36 @@ st.title('Workforce Skills Inventory and Project Alignment Dashboard')
 st.markdown("""
 This dashboard helps you understand the skills across your organization, aligns talent with project requirements, predicts changes in workforce, and creates actionable insights for effective workforce management.
 Use the controls below to input skills data and upcoming projects, then optimize the allocation of resources.
+
+### Requirements to Run This Project:
+1. **Python 3**: Make sure Python 3 is installed.
+2. **Install Dependencies**:
+   - Create a virtual environment:
+     ```sh
+     python3 -m venv venv
+     source venv/bin/activate
+     ```
+   - Install required packages using `pip`:
+     ```sh
+     pip install streamlit pandas scikit-learn matplotlib openai
+     ```
+3. **OpenAI API Key**:
+   - Create a `.streamlit` folder in your project directory:
+     ```sh
+     mkdir .streamlit
+     ```
+   - Create a `secrets.toml` file in `.streamlit` folder and add your OpenAI API key:
+     ```toml
+     [general]
+     openai_api_key = "YOUR_OPENAI_API_KEY"
+     ```
+4. **Run the App**:
+   - Use the command:
+     ```sh
+     streamlit run skills_workforce_dashboard.py
+     ```
+5. **Access the App**:
+   - Open your browser and navigate to `http://localhost:8501`.
 """)
 
 # Sidebar options for user input
