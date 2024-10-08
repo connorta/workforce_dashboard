@@ -205,13 +205,10 @@ user_question = st.sidebar.text_area("Ask a question about the analysis:")
 
 if user_question:
     openai.api_key = st.secrets["openai_api_key"]
-    response = openai.ChatCompletion.create(
-        model="gpt-3.5-turbo",
-        messages=[
-            {"role": "system", "content": "You are an expert data analyst."},
-            {"role": "user", "content": user_question}
-        ],
+    response = openai.Completion.create(
+        engine="text-davinci-003",
+        prompt=f"You are an expert data analyst. Answer the following question based on the workforce data analysis provided: {user_question}",
         max_tokens=150
     )
     st.sidebar.write("GPT Agent Response:")
-    st.sidebar.write(response['choices'][0]['message']['content'].strip())
+    st.sidebar.write(response.choices[0].text.strip())
