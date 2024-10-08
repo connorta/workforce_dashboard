@@ -7,6 +7,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
 from mesa import Agent, Model
 from mesa.time import RandomActivation
+import openai
 
 # Title of the dashboard
 st.title('Advanced Workforce Modeling Dashboard with Machine Learning')
@@ -196,3 +197,17 @@ ax.set_xlabel('Skill Level')
 ax.set_ylabel('Count')
 ax.set_title('Supply and Demand of Skills')
 st.pyplot(fig)
+
+# GPT Agent for Q&A
+st.sidebar.header("Ask the GPT Agent")
+user_question = st.sidebar.text_area("Ask a question about the analysis:")
+
+if user_question:
+    openai.api_key = st.secrets["openai_api_key"]
+    response = openai.Completion.create(
+        engine="text-davinci-003",
+        prompt=f"You are an expert data analyst. Answer the following question based on the workforce data analysis provided: {user_question}",
+        max_tokens=150
+    )
+    st.sidebar.write("GPT Agent Response:")
+    st.sidebar.write(response.choices[0].text.strip())
